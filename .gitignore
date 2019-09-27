@@ -265,3 +265,4 @@ package-lock.json
 .env
 logs/*
 *.js
+*.bak
