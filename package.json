@@ -1,0 +1,13 @@
+{
+  "name": "endah",
+  "version": "0.0.0",
+  "description": "endah",
+  "main": "app.js",
+  "author": {
+    "name": ""
+  },
+  "devDependencies": {
+    "@types/node": "^12.7.8",
+    "typescript": "^3.6.3"
+  }
+}
