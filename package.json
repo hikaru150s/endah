@@ -1,10 +1,16 @@
 {
   "name": "endah",
-  "version": "0.0.0",
-  "description": "endah",
+  "version": "0.0.1",
+  "description": "Intelligent Group Formation using Fuzzy C-Means",
+  "license": "MIT",
   "main": "app.js",
   "author": {
-    "name": ""
+    "name": "Haikal Handamara",
+    "email": "haikal_adha@hotmail.com"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node app.js"
   },
   "devDependencies": {
     "@types/node": "^12.7.8",
