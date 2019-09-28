@@ -42,6 +42,9 @@
     <Content Include="package.json" />
     <Content Include="README.md" />
     <Content Include="tsconfig.json" />
+    <TypeScriptCompile Include="classes\ClusterCenter.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
     <TypeScriptCompile Include="classes\FuzzyCMeans.ts" />
     <TypeScriptCompile Include="classes\index.ts">
       <SubType>Code</SubType>

@@ -1,4 +1,5 @@
 ﻿import { IPersonScore } from "../interfaces";
+import Decimal from "decimal.js";
 
 export class Person {
     private _id: number;
@@ -47,5 +48,14 @@ export class Person {
         this._sensing_intuitive = this.tryParseToNumber(score.sensing_intuitive);
         this._visual_verbal = this.tryParseToNumber(score.visual_verbal);
         this._sequential_global = this.tryParseToNumber(score.sequential_global);
+    }
+
+    public toVector(): Decimal[] {
+        return [
+            new Decimal(this._active_reflective),
+            new Decimal(this._sensing_intuitive),
+            new Decimal(this._visual_verbal),
+            new Decimal(this._sequential_global),
+        ];
     }
 }
