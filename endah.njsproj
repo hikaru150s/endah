@@ -46,6 +46,9 @@
       <SubType>Code</SubType>
     </TypeScriptCompile>
     <TypeScriptCompile Include="classes\FuzzyCMeans.ts" />
+    <TypeScriptCompile Include="classes\Group.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
     <TypeScriptCompile Include="classes\index.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
