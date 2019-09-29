@@ -52,7 +52,9 @@
     <TypeScriptCompile Include="classes\Person.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>
-    <TypeScriptCompile Include="interfaces\IMatrixRow.ts" />
+    <TypeScriptCompile Include="interfaces\IMember.ts">
+      <SubType>Code</SubType>
+    </TypeScriptCompile>
     <TypeScriptCompile Include="interfaces\index.ts">
       <SubType>Code</SubType>
     </TypeScriptCompile>

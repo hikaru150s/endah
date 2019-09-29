@@ -1,4 +1,4 @@
-﻿import { IMatrixRow } from "../interfaces";
+﻿import { IMember } from "../interfaces";
 import { pseudoRandomBytes } from "crypto";
 import { Person } from "./Person";
 import Decimal from 'decimal.js';
@@ -8,13 +8,13 @@ export class FuzzyCMeans {
     private static ZERO = new Decimal(0);
     private static ONE = new Decimal(1);
 
-    private _mat: IMatrixRow[]; // U/u
+    private _mat: IMember[]; // U/u
     private _groupNum: number;
     private _objectiveValue: Decimal; // J
     private _mass: number; // m
     private _clusterCenter: ClusterCenter[]; // C/c
 
-    get partitionMatrix(): IMatrixRow[] {
+    get partitionMatrix(): IMember[] {
         return this._mat;
     }
 
@@ -56,7 +56,7 @@ export class FuzzyCMeans {
         this._objectiveValue = FuzzyCMeans.ZERO;
     }
 
-    public formGroup(maxIteration: number, minImprovement: Decimal, mass: number = 2) {
+    public buildModel(maxIteration: number, minImprovement: Decimal, mass: number = 2) {
         if (minImprovement.greaterThan(FuzzyCMeans.ZERO) && minImprovement.lessThan(FuzzyCMeans.ONE)) {
             if (mass > 1) {
                 this._mass = mass;
@@ -110,4 +110,6 @@ export class FuzzyCMeans {
             throw new Error('Minimum improvement must be greater than 0 and lower than 1');
         }
     }
+
+
 }

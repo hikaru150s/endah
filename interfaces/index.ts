@@ -1,2 +1,2 @@
 ﻿export { IPersonScore } from './IPersonScore';
-export { IMatrixRow } from './IMatrixRow';
+export { IMember } from './IMember';
