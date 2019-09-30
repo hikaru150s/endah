@@ -94,6 +94,22 @@ export class FuzzyCMeans {
                         }
                     }
                     if (showOnIteration.includes(iteration)) console.log('New Matrix:', this._mat);
+                    // Extension: ensure all values inside partition matrix U are [0, 1]
+                    /*
+                     * Flow:
+                     * For every row in partition matrix do
+                     *  sumInVector = sum of all dimension in vector
+                     *  For every dimension in row.vector do
+                     *      set dimension = dimension / sumInVector
+                     *  End
+                     * End
+                     */
+                    this._mat = this._mat.map(row => {
+                        let sumInVector = row.vector.reduce((p, c) => p.plus(c));
+                        let flattedVector = row.vector.map(val => val.div(sumInVector));
+                        row.vector = flattedVector;
+                        return row;
+                    });
                     // 2.d.
                     let objectiveValue = this._mat
                         .map((row, i) => this._clusterCenter
