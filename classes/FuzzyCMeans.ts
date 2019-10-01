@@ -5,6 +5,9 @@ import Decimal from 'decimal.js';
 import { ClusterCenter } from "./ClusterCenter";
 import { Group } from "./Group";
 
+/**
+ * Fuzzy C Means (FCM) model.
+ */
 export class FuzzyCMeans {
     private static ZERO = new Decimal(0);
     private static ONE = new Decimal(1);
@@ -15,22 +18,39 @@ export class FuzzyCMeans {
     private _mass: number; // m
     private _clusterCenter: ClusterCenter[]; // C/c
 
+    /**
+     * Get current partition matrix.
+     */
     get partitionMatrix(): IMember[] {
         return this._mat;
     }
 
+    /**
+     * Get number of groups modelled by this FCM model.
+     */
     get groupNum(): number {
         return this._groupNum;
     }
 
+    /**
+     * Get current objective value (J) from last iteration.
+     */
     get objectiveValue(): Decimal {
         return this._objectiveValue;
     }
 
+    /**
+     * Get masses (m) set for this FCM model.
+     */
     get mass(): number {
         return this._mass;
     }
 
+    /**
+     * Generate randomly-uniform Vector (sum of all elements in vector are 1.0).
+     * @param length    Vector length.
+     * @returns         Random vector.
+     */
     private generateRandomUniformVector(length: number): Decimal[] {
         let vector: Decimal[] = new Array<Decimal>();
         let sum: Decimal = new Decimal(0);
@@ -41,6 +61,13 @@ export class FuzzyCMeans {
         return vector.map(v => v.div(sum));
     }
 
+    /**
+     * Calculate distance between two vector.
+     * @param leftVector    Left Vector.
+     * @param rightVector   Right Vector.
+     * @returns             Distance in decimal.
+     * @throws              Error if vector length is different.
+     */
     private distance(leftVector: Decimal[], rightVector: Decimal[]): Decimal {
         if (leftVector.length === rightVector.length) {
             return Decimal.sqrt(leftVector.map((v, i) => Decimal.pow(v.minus(rightVector[i]), 2)).reduce((p, c) => p.plus(c)));
@@ -49,6 +76,12 @@ export class FuzzyCMeans {
         }
     }
 
+    /**
+     * Construct a new FCM Model.
+     * @param population        The population to process.
+     * @param groupNum          Number of desired groups.
+     * @param initialVectors    Initial vector (if set). Set null to use randomly-uniform vector.
+     */
     public constructor(population: Person[], groupNum: number, initialVectors: Decimal[][] = null) {
         this._groupNum = groupNum;
         this._mat = population.map((p, i) => ({ person: p, vector: initialVectors && initialVectors[i] ? initialVectors[i] : this.generateRandomUniformVector(this._groupNum) }));
@@ -57,6 +90,14 @@ export class FuzzyCMeans {
         this._objectiveValue = FuzzyCMeans.ZERO;
     }
 
+    /**
+     * Build FCM model.
+     * @param maxIteration      Maximmum iteration that this FCM should run.
+     * @param minImprovement    Minimum improvement to stop this FCM.
+     * @param mass              Mass (m) to be used. Default to 2.
+     * @throws                  Error if mass is less than 2.
+     * @throws                  Error if minimum improvement value is less than or equal to 0 or greater than or equal to 1.
+     */
     public buildModel(maxIteration: number, minImprovement: Decimal, mass: number = 2) {
         if (minImprovement.greaterThan(FuzzyCMeans.ZERO) && minImprovement.lessThan(FuzzyCMeans.ONE)) {
             if (mass > 1) {
@@ -64,35 +105,27 @@ export class FuzzyCMeans {
 
                 let stop = false;
                 let iteration = 1;
-                let showOnIteration: number[] = [];
                 while (iteration <= maxIteration && !stop) {
                     // 2.a.
                     for (let i = 0; i < this._clusterCenter.length; i++) {
-                        //if (showOnIteration.includes(iteration)) console.log('2.a.1', i);
                         let sumUPowered = this._mat.map(row => row.vector[i].pow(this._mass)).reduce((p, c) => p.plus(c));
-                        //if (showOnIteration.includes(iteration)) console.log('2.a.2', sumUPowered);
                         let clusterCenterVector = this._mat
                             .map(row => row.person.toVector().map(v => v.times(row.vector[i].pow(this._mass))))
                             .reduce((p, c) => p === null ? c : p.map((v, i) => v.plus(c[i])), null)
                             .map(v => v.div(sumUPowered));
-                        //if (showOnIteration.includes(iteration)) console.log('2.a.3', clusterCenterVector);
                         this._clusterCenter[i] = new ClusterCenter(i + 1, clusterCenterVector);
                     }
-                    if (showOnIteration.includes(iteration)) console.log('Cluster Center:', this._clusterCenter);
                     // 2.b.
                     let distanceMatrix = this._clusterCenter
                         .map(center => this._mat
                             .map(row => this.distance(center.vector, row.person.toVector()))
                     );
-                    if (showOnIteration.includes(iteration)) console.log('Distance Matrix:', distanceMatrix);
                     // 2.c.
                     for (let i = 0; i < this._mat.length; i++) {
                         for (let j = 0; j < this._mat[i].vector.length; j++) {
-                            //console.log('Reading:', {i, j});
                             this._mat[i].vector[j] = (distanceMatrix[j][i].pow(new Decimal(-2).div(this._mass - 1))).div(distanceMatrix.map(row => row[j]).reduce((p, c) => p.plus(c)));
                         }
                     }
-                    if (showOnIteration.includes(iteration)) console.log('New Matrix:', this._mat);
                     // Extension: ensure all values inside partition matrix U are [0, 1]
                     /*
                      * Flow:
@@ -119,15 +152,14 @@ export class FuzzyCMeans {
                             )
                         ).reduce((p, c) => p === null ? c : p.map((v, i) => v.plus(c[i])), null)
                         .reduce((p, c) => p.plus(c));
-                    if (showOnIteration.includes(iteration)) console.log('New Objective Value:', objectiveValue);
                     // 2.e.
-                    console.log(`Iteration ${iteration.toString().padStart(8)} of ${maxIteration.toString().padStart(8)} (Min Improvement: ${minImprovement}):`, { prev: this._objectiveValue, new: objectiveValue, improvement: Decimal.abs(objectiveValue.minus(this._objectiveValue)) });
                     if (Decimal.abs(objectiveValue.minus(this._objectiveValue)).lessThan(minImprovement)) {
                         stop = true;
                     } else {
                         this._objectiveValue = objectiveValue;
                         iteration += 1;
                     }
+                    console.log(`Iteration ${iteration.toString().padStart(8)} of ${maxIteration.toString().padStart(8)} (Min Improvement: ${minImprovement}):`, { prev: this._objectiveValue, new: objectiveValue, improvement: Decimal.abs(objectiveValue.minus(this._objectiveValue)) });
                 }
                 console.log('Iteration Stopped!');
 
@@ -139,6 +171,9 @@ export class FuzzyCMeans {
         }
     }
 
+    /**
+     * Initiate group from current model.
+     */
     public formGroups(): Group[] {
         let composedGroups = this._clusterCenter.map(center => new Group(center.id, center.vector)).sort((a, b) => a.id - b.id);
 
@@ -183,6 +218,9 @@ export class FuzzyCMeans {
         return composedGroups;
     }
 
+    /**
+     * [DEBUG ONLY] Print formatted partition matrix
+     */
     public showPartitionMatrix() {
         const memberFunction = (member: IMember): string => {
             let maxId = 0;
