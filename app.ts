@@ -5,7 +5,7 @@ import Decimal from "decimal.js";
 
 // Tweakable constants
 const groupNum: number = 7;
-const maxIteration: number = 5; // Bug found: number process became bigger each iteration starting from iteration 4, might had to investigate deeper
+const maxIteration: number = 100;
 const minImprovement: Decimal = new Decimal(0.001);
 const useRandomGeneratedDataset: boolean = false;
 

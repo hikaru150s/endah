@@ -64,9 +64,8 @@ export class FuzzyCMeans {
 
                 let stop = false;
                 let iteration = 1;
-                let showOnIteration = [4];
+                let showOnIteration: number[] = [];
                 while (iteration <= maxIteration && !stop) {
-                    console.log(`Iteration ${iteration.toString().padStart(8)} of ${maxIteration.toString().padStart(8)}:`, this._objectiveValue);
                     // 2.a.
                     for (let i = 0; i < this._clusterCenter.length; i++) {
                         //if (showOnIteration.includes(iteration)) console.log('2.a.1', i);
@@ -122,6 +121,7 @@ export class FuzzyCMeans {
                         .reduce((p, c) => p.plus(c));
                     if (showOnIteration.includes(iteration)) console.log('New Objective Value:', objectiveValue);
                     // 2.e.
+                    console.log(`Iteration ${iteration.toString().padStart(8)} of ${maxIteration.toString().padStart(8)} (Min Improvement: ${minImprovement}):`, { prev: this._objectiveValue, new: objectiveValue, improvement: Decimal.abs(objectiveValue.minus(this._objectiveValue)) });
                     if (Decimal.abs(objectiveValue.minus(this._objectiveValue)).lessThan(minImprovement)) {
                         stop = true;
                     } else {
@@ -129,6 +129,7 @@ export class FuzzyCMeans {
                         iteration += 1;
                     }
                 }
+                console.log('Iteration Stopped!');
 
             } else {
                 throw new Error('Mass must be greater than 1');
