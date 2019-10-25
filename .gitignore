@@ -266,3 +266,4 @@ package-lock.json
 logs/*
 *.js
 *.bak
+*.map

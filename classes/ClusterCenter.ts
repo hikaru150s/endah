@@ -12,6 +12,10 @@ export class ClusterCenter {
         return this._vector;
     }
 
+    get strVector(): string[] {
+        return this._vector.map(v => v.toPrecision(7));
+    }
+
     public constructor(id: number, vector: Decimal[] = []) {
         this._id = id;
         this._vector = vector;

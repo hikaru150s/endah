@@ -1,14 +1,17 @@
-﻿import { IMember } from "../interfaces";
+﻿import { IMember } from "./interfaces";
 import { pseudoRandomBytes } from "crypto";
-import { Person } from "./Person";
+import { Person } from "./classes";
 import Decimal from 'decimal.js';
-import { ClusterCenter } from "./ClusterCenter";
-import { Group } from "./Group";
+import { ClusterCenter } from "./classes/ClusterCenter";
+import { Group } from "./classes/Group";
+import { join } from "path";
+import * as csv from 'fast-csv';
+
 
 /**
  * Fuzzy C Means (FCM) model.
  */
-export class FuzzyCMeans {
+class FuzzyCMeans {
     private static ZERO = new Decimal(0);
     private static ONE = new Decimal(1);
 
@@ -119,14 +122,14 @@ export class FuzzyCMeans {
                     let distanceMatrix = this._clusterCenter
                         .map(center => this._mat
                             .map(row => this.distance(center.vector, row.person.toVector()))
-                    );
+                        );
                     // 2.c.
                     for (let i = 0; i < this._mat.length; i++) {
                         for (let j = 0; j < this._mat[i].vector.length; j++) {
-                            this._mat[i].vector[j] = (distanceMatrix[j][i].pow(new Decimal(-2).div(this._mass - 1)))
-                                .div(
-                                distanceMatrix.map(row => row[i]).reduce((p, c) => p.plus(c))
-                                );
+                            let l = distanceMatrix[j][i].pow(new Decimal(-2));
+                            let actualL = (distanceMatrix[j][i].pow(new Decimal(-2).div(this._mass - 1)));
+                            let sig = distanceMatrix.map(row => row[i]).reduce((p, c) => p.plus(c));
+                            this._mat[i].vector[j] = (distanceMatrix[j][i].pow(new Decimal(-2).div(this._mass - 1))).div(distanceMatrix.map(row => row[i]).reduce((p, c) => p.plus(c)));
                         }
                     }
                     // Extension: ensure all values inside partition matrix U are [0, 1]
@@ -238,4 +241,95 @@ export class FuzzyCMeans {
         };
         console.log('Partition Matrix', this._mat.map(row => memberFunction(row)));
     }
+}
+
+// Tweakable constants
+const groupNum: number = 7; // Number of group you'd want to create
+const maxIteration: number = 100; // Maximmum iteration that FCM should run
+const minImprovement: Decimal = new Decimal(0.001); // Minimum improvement to stop FCM
+const useRandomGeneratedDataset: boolean = false; // Toggle to use random dataset (true) or user-supplied dataset (false)
+
+const population: Person[] = new Array<Person>(); // Population set (Global)
+const initialVectors = [
+    [0.14, 0.12, 0.05, 0.22, 0.12, 0.15, 0.2],
+    [0.31, 0.14, 0.15, 0.14, 0.16, 0.05, 0.05],
+    [0.19, 0.15, 0.21, 0.11, 0.11, 0.2, 0.03],
+    [0.2, 0.18, 0.21, 0.1, 0.1, 0.11, 0.1],
+    [0.16, 0.15, 0.1, 0.14, 0.16, 0.15, 0.14],
+    [0.22, 0.2, 0.1, 0.11, 0.1, 0.15, 0.12],
+    [0.2, 0.13, 0.21, 0.16, 0.13, 0.06, 0.11],
+    [0.11, 0.2, 0.15, 0.2, 0.23, 0.05, 0.06],
+    [0.19, 0.13, 0.15, 0.11, 0.13, 0.17, 0.12],
+    [0.1, 0.12, 0.13, 0.2, 0.2, 0.13, 0.12],
+    [0.2, 0.23, 0.15, 0.13, 0.2, 0.04, 0.05],
+    [0.13, 0.2, 0.14, 0.1, 0.1, 0.13, 0.2],
+    [0.1, 0.13, 0.15, 0.2, 0.2, 0.07, 0.15],
+    [0.12, 0.15, 0.23, 0.11, 0.1, 0.17, 0.12],
+    [0.3, 0.05, 0.1, 0.1, 0.1, 0.19, 0.16],
+    [0.2, 0.02, 0.11, 0.2, 0.12, 0.22, 0.13],
+    [0.15, 0.15, 0.11, 0.21, 0.2, 0.07, 0.11],
+    [0.2, 0.15, 0.11, 0.13, 0.1, 0.16, 0.15],
+    [0.11, 0.18, 0.15, 0.2, 0.21, 0.05, 0.1],
+    [0.2, 0.15, 0.1, 0.13, 0.11, 0.16, 0.15],
+    [0.06, 0.13, 0.21, 0.16, 0.13, 0.2, 0.11],
+    [0.2, 0.14, 0.2, 0.13, 0.1, 0.13, 0.1],
+    [0.11, 0.19, 0.15, 0.16, 0.13, 0.15, 0.11],
+    [0.2, 0.03, 0.19, 0.12, 0.13, 0.21, 0.12],
+    [0.13, 0.2, 0.15, 0.16, 0.15, 0.1, 0.11],
+    [0.25, 0.2, 0.1, 0.12, 0.08, 0.15, 0.1],
+    [0.3, 0.1, 0.1, 0.16, 0.19, 0.1, 0.05],
+    [0.14, 0.16, 0.14, 0.05, 0.31, 0.05, 0.15],
+    [0.1, 0.25, 0.2, 0.12, 0.01, 0.12, 0.2],
+    [0.05, 0.12, 0.2, 0.14, 0.15, 0.22, 0.12],
+    [0.15, 0.21, 0.03, 0.11, 0.2, 0.11, 0.19],
+    [0.11, 0.15, 0.15, 0.1, 0.16, 0.13, 0.2],
+    [0.12, 0.11, 0.22, 0.1, 0.15, 0.2, 0.1],
+    [0.25, 0.2, 0.12, 0.08, 0.05, 0.1, 0.2],
+    [0.15, 0.21, 0.2, 0.11, 0.07, 0.11, 0.15],
+].map(row => row.map(v => new Decimal(v))); // Initial vectors / partition matrix to be used on user-supplied dataset
+
+if (useRandomGeneratedDataset) {
+    // Run FCM on random dataset mode
+    const datasetSize: number = 10000; // Determin how big does the dataset
+    const randomScoreFunction = (): number => (2 * Math.random() * 9) - 1; // Function to random the traits value {-9, -7, -5, -3, -1, 1, 3, 5, 7, 9}
+    for (let i = 1; i <= datasetSize; i++) { // Generate random population
+        population.push(new Person(i, `Person ${i}`, {
+            active_reflective: randomScoreFunction(),
+            sensing_intuitive: randomScoreFunction(),
+            visual_verbal: randomScoreFunction(),
+            sequential_global: randomScoreFunction(),
+        }));
+    }
+    const model = new FuzzyCMeans(population, groupNum); // Generate FCM model
+    //console.log('Model:', model.partitionMatrix.map(v => ({ mat: v.vector, sum: v.vector.reduce((p, c) => p.add(c), new Decimal(0)) })));
+    model.buildModel(maxIteration, minImprovement); // Build model
+    //model.showPartitionMatrix();
+    let groups = model.formGroups(); // Form groups from model
+    console.log('Generated groups:', groups.map(group => ({
+        id: group.id,
+        centerVector: group.centerVector,
+        members: group.members.map(member => member.person.name),
+    })));
+} else {
+    csv.parseFile(join(__dirname, 'dataset.csv'), { headers: true, objectMode: true }) // Read dataset.csv
+        .on('error', error => console.error(error))
+        .on('data', row => population.push(new Person(row['Num'], row['Name'], { // Push each row to population
+            active_reflective: row['Active_Reflective'],
+            sensing_intuitive: row['Sensing_Intuitive'],
+            visual_verbal: row['Visual_Verbal'],
+            sequential_global: row['Sequential_Global']
+        })))
+        .on('end', () => {
+            const model = new FuzzyCMeans(population, groupNum, initialVectors); // Generate FCM model
+            //console.log('Model:', model.partitionMatrix.map(v => ({ mat: v.vector, sum: v.vector.reduce((p, c) => p.add(c), new Decimal(0)) })));
+            model.buildModel(maxIteration, minImprovement); // Build model
+            //model.showPartitionMatrix();
+            let groups = model.formGroups(); // Form groups from model
+            console.log('Generated groups:', groups.map(group => ({
+                id: group.id,
+                centerVector: group.centerVector,
+                members: group.members.map(member => member.person.name),
+            })));
+        });
+
 }
